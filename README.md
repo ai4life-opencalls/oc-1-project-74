@@ -52,9 +52,6 @@ How to run on the google collab:
 4) Run the notebook! 
 
 
-The notebook will generate an instance leaf mask, rough central plant mask and a leaf tracking mask for every frame in the `prediction` folder inside your data folder. 
-It will also by default save visualizations of the resulting masks in `visualization` folder inside `predictions`: 
-
 <div>
  <img src="resources/tutorial_images/plant_vis.png" width="50%"><img src="resources/tutorial_images/leaf_vis.png" width="50%">
 </div> 
