@@ -7,6 +7,9 @@
 # Project #74: Leaf tracker plant species proof
 
 ---
+[![DOI](https://zenodo.org/badge/774349696.svg)](https://doi.org/10.5281/zenodo.14418900)
+
+
 This page was created by the [AI4Life project](https://ai4life.eurobioimaging.eu) using data provided by Sofia Bengoa Luoni in [Wageningen University](https://www.wur.nl/en/wageningen-university.htm).
 
 If any of the instructions are not working, please [open an issue](https://github.com/ai4life-opencalls/project_11/issues) or contact us at [ai4life@fht.org](ai4life@fht.org)! 
