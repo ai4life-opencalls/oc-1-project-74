@@ -62,12 +62,61 @@ How to run on the google collab:
 
 
 ## Instance segmentation training
-First, we created a pretrain detection model using [detectron2](https://github.com/facebookresearch/detectron2) using data from [PhenoBench](https://www.phenobench.org/) dataset. 
-Then, the pre-train was fine-tuned on the user's data.   
+The training code lives in [`training/`](training/) and fine-tunes a Mask R-CNN (ResNet-50 + FPN) with **two classes**: `plant` (class 0) and `leaf` (class 1). The plant mask is generated automatically from the convex hull of all leaf polygons in each image, so only per-leaf annotations are required.
 
-All the annotations were performed using [labelme](https://github.com/labelmeai/labelme) and [AnyLabeling](https://github.com/vietanhdev/anylabeling) AI assisted tool.
+### 1. Dataset layout
 
-Training code: Work in progress! 
+The training script expects one folder per plant set, each containing the images and a COCO-format `annotations.json` for the leaf polygons:
+
+```
+dataset/
+├── set_001_HI/
+│   ├── 7-12-RGB2-G8_..._Fish Eye Corrected.png
+│   ├── ...
+│   └── annotations.json                             # COCO file with leaf polygons
+├── set_003_BNI/
+│   └── ...
+└── ...
+```
+
+### 2. Install
+
+Training requires a CUDA-capable GPU. We use [`uv`](https://docs.astral.sh/uv/) to manage the environment, but plain `pip` works too:
+
+```bash
+cd training
+uv venv .venv --python 3.10
+source .venv/bin/activate
+
+uv pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
+uv pip install "setuptools<70" numpy==1.24.4 pycocotools opencv-python-headless pillow
+uv pip install git+https://github.com/facebookresearch/detectron2.git --no-build-isolation
+```
+
+> `setuptools<70` is pinned because detectron2 imports `pkg_resources`, which was removed in setuptools 70.
+
+### 3. Prepare the data
+
+`prepare_dataset.py` merges the per-set COCO files into a single `train.json` / `val.json` pair. The split is done **by set** (not by image) so all time-series frames from the same plant stay in the same split, avoiding leakage. For every image it also generates a `plant` annotation as the convex hull of its leaf polygons.
+
+```bash
+export OC1_DATASET_ROOT=/path/to/dataset
+python prepare_dataset.py                              # default: 80/20 train/val split, seed 42
+python prepare_dataset.py --val-fraction 0.15 --seed 0  # custom split
+```
+
+This writes `training/data/train.json` and `training/data/val.json`. Image paths inside these JSONs are stored as `<set_name>/<image>.png` and resolve against `OC1_DATASET_ROOT`.
+
+### 4. Train
+
+```bash
+python train.py                  # 1 GPU
+python train.py --num-gpus 2     # multi-GPU
+python train.py --resume         # resume from last checkpoint
+python train.py --eval-only      # COCO eval on the val split only
+```
+
+Hyperparameters (LR, schedule, augmentations, etc.) live in [`maskrcnn_custom_config.py`](training/maskrcnn_custom_config.py). The default config fine-tunes from the COCO Mask R-CNN R-50 FPN 3× checkpoint for 10 000 iterations at LR 2.5e-4 with horizontal flip + multi-scale training. Checkpoints, logs, and COCO eval results are written to `./output/maskrcnn_custom`.
 
 ## Conclusion
 In this tutorial, we showed how to use 
